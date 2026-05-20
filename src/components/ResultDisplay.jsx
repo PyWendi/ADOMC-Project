@@ -21,19 +21,33 @@ const ResultDisplay = ({ matrix, steps, path, logs, structure, visitOrder, loadi
         <div className="rounded">
           <h2 className="text-lg font-semibold mb-4">Matrice Finale {modeActif ? <span className="ml-2 text-xs px-2 py-1 rounded bg-gray-200 text-gray-700 font-bold uppercase">{algorithmLabel}</span> : null}</h2>
           {matrix ? (
-            <table className="min-w-full">
-              <tbody>
-                {matrix.map((row, i) => (
-                  <tr key={i}>
-                    {row.map((cell, j) => (
-                      <td key={j} className="border px-4 py-2 text-center">
-                        {formatCell(cell)}
-                      </td>
+            <div className="overflow-auto">
+              <table className="min-w-full border-collapse">
+                <thead>
+                  <tr>
+                    <th className="border bg-slate-100 px-4 py-2 text-center font-semibold">De \ À</th>
+                    {matrix.map((_, j) => (
+                      <th key={j} className="border bg-slate-100 px-4 py-2 text-center font-semibold">Nœud {j + 1}</th>
                     ))}
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {matrix.map((row, i) => (
+                    <tr key={i}>
+                      <th className="border bg-slate-100 px-4 py-2 text-center font-semibold">Nœud {i + 1}</th>
+                      {row.map((cell, j) => (
+                        <td
+                          key={j}
+                          className={`border px-4 py-2 text-center ${i === j ? 'bg-slate-100' : ''}`}
+                        >
+                          {formatCell(cell)}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           ) : (
             <span className="text-gray-500">La matrice finale s'affichera ici</span>
           )}
