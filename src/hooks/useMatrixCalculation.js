@@ -5,7 +5,10 @@ import {
   decodeMatrix,
   generateAdjacencyMatrix,
   Demoucron,
-  DemoucronMaxFixed
+  DemoucronMaxFixed,
+  breadthFirstSearch,
+  depthFirstSearch,
+  uniformCostSearch
 } from "../utils/demoucronUtils.js"
 
 /**
@@ -30,51 +33,63 @@ export default function useMatrixCalculation(graphData) {
   const [error, setError] = useState(null)
 
   // type: 'min' ou 'max'
-  const calculateMatrix = async (mode = 'min') => {
+  const calculateMatrix = async (algorithm = 'demoucron-min', isUndirected = false) => {
     setLoading(true)
     setError(null)
-    console.log("Data to use", graphData);
+    console.log("Data to use", graphData)
+
     try {
-      // TODO: Remplacer l'URL par celle du backend réel
-      // Exemple avec fetch :
-      // const response = await fetch(`http://localhost:5000/api/calcul?mode=${mode}`, {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ graph: graphData })
-      // })
-      // const result = await response.json()
-      // setMatrix(result.matrix)
-      // setSteps(result.steps)
-      // setPath(result.path)
-      // setLogs(result.logs)
-      // setMode(result.mode)
-
-      // Pour l'instant, tout est réinitialisé
-
-      // console.log("Before matrix calculation")
-      let adjacencyMatrixMin = generateAdjacencyMatrix(graphData.edges, mode == "min");
-      const ids = extractIndividualIds(graphData.edges)
-      const result = mode == "min" ? Demoucron(ids.length, adjacencyMatrixMin, true) : DemoucronMaxFixed(adjacencyMatrixMin)
-
-      if(mode == "min"){
-        /* 
-        Suite a un probleme de referencement de tableau en javascrypt
-        J'ai du stringifier les matrices puis de les extraire pour pouvoir les afficher et les traiter
-        */
-        result.steps.forEach((element, index) => {
-          const array = decodeMatrix(element.matrix)
-          result.steps[index].matrix = array
-        });
+      if (!graphData || !graphData.edges || Object.keys(graphData.edges).length === 0) {
+        throw new Error('Aucun graphe valide n’a été fourni.')
       }
 
-      setMatrix(result.finalMatrix)
-      setSteps(result.steps)
-      setPath(result.path)
-      setLogs(null)
-      setMode(mode)
+      let result
+      const adjacencyMatrix = generateAdjacencyMatrix(graphData.edges, algorithm === 'demoucron-min' || algorithm === 'demoucron-max', isUndirected)
+      const ids = extractIndividualIds(graphData.edges)
+
+      switch (algorithm) {
+        case 'demoucron-min':
+          result = Demoucron(ids.length, adjacencyMatrix, true)
+            result.steps.forEach((element, index) => {
+              // Some implementations previously serialized matrices to JSON strings.
+              // Support both serialized string and already-cloned-array formats.
+              if (typeof element.matrix === 'string') {
+                const array = decodeMatrix(element.matrix)
+                result.steps[index].matrix = array
+              } else {
+                result.steps[index].matrix = element.matrix
+              }
+            })
+          break
+
+        case 'demoucron-max':
+          result = Demoucron(ids.length, adjacencyMatrix, false)
+          break
+
+        case 'BFS':
+          result = breadthFirstSearch(graphData.edges)
+          break
+
+        case 'DFS':
+          result = depthFirstSearch(graphData.edges)
+          break
+
+        case 'UCS':
+          result = uniformCostSearch(graphData.edges)
+          break
+
+        default:
+          throw new Error(`Algorithme inconnu : ${algorithm}`)
+      }
+
+      setMatrix(result.finalMatrix || adjacencyMatrix)
+      setSteps(result.steps || [])
+      setPath(result.path || [])
+      setLogs(result.logs || null)
+      setMode(algorithm)
     } catch (err) {
       console.log(err)
-      setError('Erreur lors du calcul. Veuillez réessayer.')
+      setError(err.message || 'Erreur lors du calcul. Veuillez réessayer.')
     } finally {
       setLoading(false)
     }

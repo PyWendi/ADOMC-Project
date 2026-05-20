@@ -1,9 +1,23 @@
+const algorithmLabels = {
+  'demoucron-min': 'Cho-Demoucron Min',
+  'demoucron-max': 'Cho-Demoucron Max',
+  'BFS': 'Breadth-First Search',
+  'DFS': 'Depth-First Search',
+  'UCS': 'Uniform Cost Search'
+}
+
+const formatCell = (cell) => {
+  if (cell === Infinity || cell === -Infinity) return '∞'
+  return cell != null ? cell : '∞'
+}
+
 const ResultDisplay = ({ matrix, steps, path, logs, loading, error, modeActif }) => {
+  const algorithmLabel = algorithmLabels[modeActif] || modeActif
   return (
     <div className="space-y-4 mt-6 lg:space-y-2">
       {/* Affichage de la Matrice Finale */}
       <div className="rounded">
-        <h2 className="text-lg font-semibold mb-4">Matrice Finale {modeActif ? <span className="ml-2 text-xs px-2 py-1 rounded bg-gray-200 text-gray-700 font-bold uppercase">{modeActif === 'min' ? 'Min' : 'Max'}</span> : null}</h2>
+        <h2 className="text-lg font-semibold mb-4">Matrice Finale {modeActif ? <span className="ml-2 text-xs px-2 py-1 rounded bg-gray-200 text-gray-700 font-bold uppercase">{algorithmLabel}</span> : null}</h2>
         {/* <div className="border rounded p-4 h-48 overflow-auto"> */}
           {matrix ? (
             <table className="min-w-full">
@@ -12,13 +26,7 @@ const ResultDisplay = ({ matrix, steps, path, logs, loading, error, modeActif })
                   <tr key={i}>
                     {row.map((cell, j) => (
                       <td key={j} className="border px-4 py-2 text-center">
-                        {cell === Infinity
-                          ? '∞'
-                          : cell != null && cell != -Infinity
-                            ? cell
-                            : modeActif === 'min'
-                              ? '∞'
-                              : 0}
+                        {formatCell(cell)}
                       </td>
                     ))}
                   </tr>
@@ -34,7 +42,7 @@ const ResultDisplay = ({ matrix, steps, path, logs, loading, error, modeActif })
       {/* Affichage des Étapes */}
       <div className="rounded pt-4">
         <div className="bg-white z-10 pb-2">
-          <h2 className="text-lg font-semibold">Étapes de l'Algorithme {modeActif ? <span className="ml-2 text-xs px-2 py-1 rounded bg-gray-200 text-gray-700 font-bold uppercase">{modeActif === 'min' ? 'Min' : 'Max'}</span> : null}</h2>
+          <h2 className="text-lg font-semibold">Étapes de l'Algorithme {modeActif ? <span className="ml-2 text-xs px-2 py-1 rounded bg-gray-200 text-gray-700 font-bold uppercase">{algorithmLabel}</span> : null}</h2>
         </div>
         <div className="space-y-4">
           {steps && steps.length > 0 ? (
@@ -50,13 +58,7 @@ const ResultDisplay = ({ matrix, steps, path, logs, loading, error, modeActif })
                           <tr key={i}>
                             {row.map((cell, j) => (
                               <td key={j} className="border px-1 py-0.5">
-                                {cell === Infinity
-                                  ? '∞'
-                                  : cell != null && cell != -Infinity
-                                    ? cell
-                                    : modeActif === 'min'
-                                      ? '∞'
-                                      : 0}
+                                {formatCell(cell)}
                               </td>
                             ))}
                           </tr>

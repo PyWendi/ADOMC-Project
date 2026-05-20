@@ -73,18 +73,15 @@ export function transformNodeLinks(nodeLinks) {
 }
 
 
-export function generateAdjacencyMatrix(nodeElement, isMin=true) {
+export function generateAdjacencyMatrix(nodeElement, isMin=true, isUndirected=false) {
     const ids = extractIndividualIds(nodeElement);
     const size = ids.length;
     const matrix = [];
     const value_to_fill = isMin ? Infinity : -Infinity
-    console.log("before matrix -> ", matrix)
-    // Initialisation de la matrice avec Infinity
+    // Initialisation de la matrice
     for (let i = 0; i < size; i++) {
         matrix[i] = new Array(size).fill(value_to_fill);
     }
-
-    console.log("New matrix -> ", matrix)
 
     // Mapping id -> index pour accéder facilement aux lignes/colonnes
     const idToIndex = {};
@@ -98,12 +95,420 @@ export function generateAdjacencyMatrix(nodeElement, isMin=true) {
         const fromIndex = idToIndex[link.from];
         const toIndex = idToIndex[link.to];
         matrix[fromIndex][toIndex] = link.value;
-        // Si le graphe est non orienté, décommenter cette ligne :
-        // matrix[toIndex][fromIndex] = link.value;
+        if (isUndirected) {
+            matrix[toIndex][fromIndex] = link.value;
+        }
     });
-    console.log("Final matrix -> ",matrix)
-    
+
     return matrix;
+}
+
+export function buildAdjacencyList(nodeElement, isUndirected = false) {
+    const edges = transformNodeLinks(nodeElement)
+    const adjacency = {}
+
+    const pushEdge = (from, to, value) => {
+        if (!adjacency[from]) adjacency[from] = []
+        adjacency[from].push({ to, value })
+    }
+
+    edges.forEach(({ from, to, value }) => {
+        pushEdge(from, to, value)
+        if (isUndirected) {
+            pushEdge(to, from, value)
+        }
+    })
+
+    Object.values(adjacency).forEach(neighbors => {
+        neighbors.sort((a, b) => a.to - b.to)
+    })
+
+    return adjacency
+}
+
+export function getSortedNodeIds(nodeElement) {
+    return extractIndividualIds(nodeElement)
+        .map((id) => Number(id))
+        .filter((id) => !Number.isNaN(id))
+        .sort((a, b) => a - b)
+}
+
+export function pathFromNodeSequence(path) {
+    if (!path || path.length < 2) return []
+    return path.slice(0, -1).map((node, index) => ({ from: node, to: path[index + 1] }))
+}
+
+export function breadthFirstSearch(nodeElement, isUndirected = false) {
+    const ids = getSortedNodeIds(nodeElement)
+    const adjacency = buildAdjacencyList(nodeElement, isUndirected)
+    const start = ids[0]
+    const target = ids[ids.length - 1]
+    const queue = [[start]]
+    const visited = new Set([start])
+    const matrix = generateAdjacencyMatrix(nodeElement, true)
+    const steps = []
+    const visitedOrder = []
+
+    while (queue.length > 0) {
+        const path = queue.shift()
+        const current = path[path.length - 1]
+        visitedOrder.push(current)
+
+        if (current === target) {
+            const result = {
+                path: pathFromNodeSequence(path),
+                finalMatrix: matrix,
+                steps: [
+                    {
+                        description: `Breadth-First Search de ${start} à ${target}`,
+                        matrix: deepCloneMatrix(matrix),
+                        logs: `Ordre de visite : ${visitedOrder.join(' → ')}`
+                    }
+                ]
+            }
+            return result
+        }
+
+        const neighbors = adjacency[current] || []
+        for (const { to } of neighbors) {
+            if (!visited.has(to)) {
+                visited.add(to)
+                queue.push([...path, to])
+            }
+        }
+    }
+
+    return {
+        path: [],
+        finalMatrix: matrix,
+        steps: [
+            {
+                description: `Breadth-First Search de ${start} à ${target}`,
+                matrix: deepCloneMatrix(matrix),
+                logs: `Aucun chemin trouvé.`
+            }
+        ]
+    }
+}
+
+export function depthFirstSearch(nodeElement, isUndirected = false) {
+    const ids = getSortedNodeIds(nodeElement)
+    const adjacency = buildAdjacencyList(nodeElement, isUndirected)
+    const start = ids[0]
+    const target = ids[ids.length - 1]
+    const stack = [[start]]
+    const visited = new Set()
+    const matrix = generateAdjacencyMatrix(nodeElement, true)
+    const visitedOrder = []
+
+    while (stack.length > 0) {
+        const path = stack.pop()
+        const current = path[path.length - 1]
+
+        if (visited.has(current)) continue
+        visited.add(current)
+        visitedOrder.push(current)
+
+        if (current === target) {
+            return {
+                path: pathFromNodeSequence(path),
+                finalMatrix: matrix,
+                steps: [
+                    {
+                        description: `Depth-First Search de ${start} à ${target}`,
+                        matrix: deepCloneMatrix(matrix),
+                        logs: `Ordre de visite : ${visitedOrder.join(' → ')}`
+                    }
+                ]
+            }
+        }
+
+        const neighbors = adjacency[current] || []
+        for (let i = neighbors.length - 1; i >= 0; i--) {
+            const { to } = neighbors[i]
+            if (!visited.has(to)) {
+                stack.push([...path, to])
+            }
+        }
+    }
+
+    return {
+        path: [],
+        finalMatrix: matrix,
+        steps: [
+            {
+                description: `Depth-First Search de ${start} à ${target}`,
+                matrix: deepCloneMatrix(matrix),
+                logs: `Aucun chemin trouvé.`
+            }
+        ]
+    }
+}
+
+export function uniformCostSearch(nodeElement, isUndirected = false) {
+    const ids = getSortedNodeIds(nodeElement)
+    const adjacency = buildAdjacencyList(nodeElement, isUndirected)
+    const start = ids[0]
+    const target = ids[ids.length - 1]
+    const matrix = generateAdjacencyMatrix(nodeElement, true)
+    const frontier = [{ node: start, cost: 0, path: [start] }]
+    const bestCosts = { [start]: 0 }
+    const visitedOrder = []
+
+    while (frontier.length > 0) {
+        frontier.sort((a, b) => a.cost - b.cost)
+        const currentState = frontier.shift()
+        const { node, cost, path } = currentState
+
+        if (visitedOrder.indexOf(node) === -1) {
+            visitedOrder.push(node)
+        }
+
+        if (node === target) {
+            return {
+                path: pathFromNodeSequence(path),
+                finalMatrix: matrix,
+                steps: [
+                    {
+                        description: `Uniform Cost Search de ${start} à ${target}`,
+                        matrix: deepCloneMatrix(matrix),
+                        logs: `Coût total : ${cost}\nOrdre de visite : ${visitedOrder.join(' → ')}`
+                    }
+                ]
+            }
+        }
+
+        const neighbors = adjacency[node] || []
+        for (const { to, value } of neighbors) {
+            const newCost = cost + value
+            if (bestCosts[to] == null || newCost < bestCosts[to]) {
+                bestCosts[to] = newCost
+                frontier.push({ node: to, cost: newCost, path: [...path, to] })
+            }
+        }
+    }
+
+    return {
+        path: [],
+        finalMatrix: matrix,
+        steps: [
+            {
+                description: `Uniform Cost Search de ${start} à ${target}`,
+                matrix: deepCloneMatrix(matrix),
+                logs: `Aucun chemin trouvé.`
+            }
+        ]
+    }
+}
+
+export function aStarSearch(nodeElement, isUndirected = false) {
+    const ids = getSortedNodeIds(nodeElement)
+    const adjacency = buildAdjacencyList(nodeElement, isUndirected)
+    const start = ids[0]
+    const target = ids[ids.length - 1]
+    const matrix = generateAdjacencyMatrix(nodeElement, true, isUndirected)
+    const frontier = [{ node: start, cost: 0, estimate: 0, path: [start] }]
+    const bestCosts = { [start]: 0 }
+    const visitedOrder = []
+
+    while (frontier.length > 0) {
+        frontier.sort((a, b) => a.estimate - b.estimate)
+        const currentState = frontier.shift()
+        const { node, cost, path } = currentState
+
+        if (visitedOrder.indexOf(node) === -1) {
+            visitedOrder.push(node)
+        }
+
+        if (node === target) {
+            return {
+                path: pathFromNodeSequence(path),
+                finalMatrix: matrix,
+                steps: [
+                    {
+                        description: `A* Search de ${start} à ${target}`,
+                        matrix: deepCloneMatrix(matrix),
+                        logs: `Coût total : ${cost}\nOrdre de visite : ${visitedOrder.join(' → ')}\nHeuristique utilisée : 0 (comportement UCS)`
+                    }
+                ]
+            }
+        }
+
+        const neighbors = adjacency[node] || []
+        for (const { to, value } of neighbors) {
+            const newCost = cost + value
+            const heuristic = 0
+            const estimate = newCost + heuristic
+            if (bestCosts[to] == null || newCost < bestCosts[to]) {
+                bestCosts[to] = newCost
+                frontier.push({ node: to, cost: newCost, estimate, path: [...path, to] })
+            }
+        }
+    }
+
+    return {
+        path: [],
+        finalMatrix: matrix,
+        steps: [
+            {
+                description: `A* Search de ${start} à ${target}`,
+                matrix: deepCloneMatrix(matrix),
+                logs: `Aucun chemin trouvé.`
+            }
+        ]
+    }
+}
+
+export function floydWarshall(nodeElement, isUndirected = false) {
+    const ids = getSortedNodeIds(nodeElement)
+    const size = ids.length
+    const matrix = generateAdjacencyMatrix(nodeElement, true, isUndirected)
+    const distance = matrix.map(row => row.slice())
+    for (let i = 0; i < size; i++) {
+        distance[i][i] = 0
+    }
+    const steps = []
+
+    for (let k = 0; k < size; k++) {
+        for (let i = 0; i < size; i++) {
+            for (let j = 0; j < size; j++) {
+                const viaK = distance[i][k] + distance[k][j]
+                if (distance[i][k] !== Infinity && distance[k][j] !== Infinity && viaK < distance[i][j]) {
+                    distance[i][j] = viaK
+                    steps.push({
+                        description: `k=${k + 1}`,
+                        matrix: deepCloneMatrix(distance),
+                        logs: `Dist[${i + 1}][${j + 1}] = Dist[${i + 1}][${k + 1}] + Dist[${k + 1}][${j + 1}] = ${distance[i][k]} + ${distance[k][j]} = ${viaK}`
+                    })
+                }
+            }
+        }
+    }
+
+    if (steps.length === 0) {
+        steps.push({
+            description: 'Floyd-Warshall',
+            matrix: deepCloneMatrix(distance),
+            logs: 'Aucune amélioration nécessaire, la matrice initiale est déjà optimisée.'
+        })
+    }
+
+    return {
+        matrix: distance,
+        steps
+    }
+}
+
+function createUnionFind(size) {
+    const parent = Array.from({ length: size }, (_, i) => i)
+    const rank = new Array(size).fill(0)
+
+    const find = (x) => {
+        if (parent[x] !== x) parent[x] = find(parent[x])
+        return parent[x]
+    }
+
+    const union = (x, y) => {
+        const rootX = find(x)
+        const rootY = find(y)
+        if (rootX === rootY) return false
+        if (rank[rootX] < rank[rootY]) {
+            parent[rootX] = rootY
+        } else if (rank[rootX] > rank[rootY]) {
+            parent[rootY] = rootX
+        } else {
+            parent[rootY] = rootX
+            rank[rootX]++
+        }
+        return true
+    }
+
+    return { find, union }
+}
+
+export function kruskal(nodeElement) {
+    const ids = getSortedNodeIds(nodeElement)
+    const size = ids.length
+    const idToIndex = Object.fromEntries(ids.map((id, index) => [id, index]))
+    const edges = transformNodeLinks(nodeElement)
+        .map(({ from, to, value }) => ({ from, to, value }))
+        .sort((a, b) => a.value - b.value)
+
+    const uf = createUnionFind(size)
+    const selectedEdges = []
+    const steps = []
+
+    edges.forEach(({ from, to, value }) => {
+        const u = idToIndex[from]
+        const v = idToIndex[to]
+        if (uf.union(u, v)) {
+            selectedEdges.push({ from, to })
+            steps.push({
+                description: `Kruskal sélectionne ${from} → ${to}`,
+                matrix: deepCloneMatrix(generateAdjacencyMatrix(nodeElement, true, true)),
+                logs: `Arête sélectionnée : ${from} - ${to} (${value})`
+            })
+        }
+    })
+
+    const finalMatrix = Array.from({ length: size }, () => new Array(size).fill(Infinity))
+    selectedEdges.forEach(({ from, to }) => {
+        finalMatrix[idToIndex[from]][idToIndex[to]] = nodeElement[`${from}-${to}`] ?? nodeElement[`${to}-${from}`]
+        finalMatrix[idToIndex[to]][idToIndex[from]] = nodeElement[`${from}-${to}`] ?? nodeElement[`${to}-${from}`]
+    })
+
+    return {
+        path: selectedEdges,
+        finalMatrix,
+        steps,
+        logs: `Arbre couvrant construit avec ${selectedEdges.length} arêtes.`
+    }
+}
+
+export function prim(nodeElement) {
+    const ids = getSortedNodeIds(nodeElement)
+    const size = ids.length
+    const adjacency = buildAdjacencyList(nodeElement, true)
+    const idToIndex = Object.fromEntries(ids.map((id, index) => [id, index]))
+    const visited = new Set([ids[0]])
+    const selectedEdges = []
+    const steps = []
+
+    while (visited.size < size) {
+        let bestEdge = null
+        let bestWeight = Infinity
+
+        visited.forEach((node) => {
+            (adjacency[node] || []).forEach(({ to, value }) => {
+                if (!visited.has(to) && value < bestWeight) {
+                    bestWeight = value
+                    bestEdge = { from: node, to, value }
+                }
+            })
+        })
+
+        if (!bestEdge) break
+        selectedEdges.push({ from: bestEdge.from, to: bestEdge.to })
+        visited.add(bestEdge.to)
+        steps.push({
+            description: `Prim ajoute ${bestEdge.from} → ${bestEdge.to}`,
+            matrix: deepCloneMatrix(generateAdjacencyMatrix(nodeElement, true, true)),
+            logs: `Arête ajoutée : ${bestEdge.from} - ${bestEdge.to} (${bestEdge.value})`
+        })
+    }
+
+    const finalMatrix = Array.from({ length: size }, () => new Array(size).fill(Infinity))
+    selectedEdges.forEach(({ from, to }) => {
+        finalMatrix[idToIndex[from]][idToIndex[to]] = nodeElement[`${from}-${to}`] ?? nodeElement[`${to}-${from}`]
+        finalMatrix[idToIndex[to]][idToIndex[from]] = nodeElement[`${from}-${to}`] ?? nodeElement[`${to}-${from}`]
+    })
+
+    return {
+        path: selectedEdges,
+        finalMatrix,
+        steps,
+        logs: `Arbre couvrant construit avec ${selectedEdges.length} arêtes.`
+    }
 }
 
 function isInteger(value) {
@@ -139,17 +544,18 @@ const getBefore = (isBefore, matrice, ktoindex) => {
 }
 
 export function deepCloneMatrix(matrix) {
-    const serialized = matrix.map(row =>
+    // Return a deep-cloned matrix (array of arrays) preserving special numeric values
+    return matrix.map(row =>
         row.map(cell => {
-            if (typeof cell === "number" && !isFinite(cell)) {
-                return cell === Infinity ? "Infinity" :
-                       cell === -Infinity ? "-Infinity" :
-                       "NaN";
+            if (typeof cell === "number") {
+                if (cell === Infinity) return Infinity
+                if (cell === -Infinity) return -Infinity
+                if (Number.isNaN(cell)) return NaN
+                return cell
             }
-            return cell;
+            return cell
         })
-    );
-    return JSON.stringify(serialized);
+    )
 }
 
 export function decodeMatrix(serializedMatrix) {
