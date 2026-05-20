@@ -148,7 +148,7 @@ export function breadthFirstSearch(nodeElement, isUndirected = false) {
     const steps = [
         {
             description: `Initialisation de BFS`,
-            logs: `Structure: File\nFile initiale: [${start}]\nVisité: []`
+            logs: `Structure : File (FIFO)\nFile initiale : [${start}]\nVisité : []\nBFS garantit le chemin le plus court.`
         }
     ]
     const visitOrder = []
@@ -161,7 +161,7 @@ export function breadthFirstSearch(nodeElement, isUndirected = false) {
         const queueState = queue.map((p) => p[p.length - 1])
         steps.push({
             description: `Traitement du nœud ${current}`,
-            logs: `Structure: File\nFile actuelle: [${[current, ...queueState].join(', ')}]\nOrdre de visite: [${visitOrder.join(' → ')}]`
+            logs: `Structure : File (FIFO)\nFile actuelle : [${[current, ...queueState].join(', ')}]\nOrdre de visite : [${visitOrder.join(' → ')}]`
         })
 
         if (current === target) {
@@ -177,7 +177,7 @@ export function breadthFirstSearch(nodeElement, isUndirected = false) {
                 structure: 'File',
                 visitOrder,
                 steps,
-                logs: `Ordre de visite : ${visitOrder.join(' → ')}`
+                logs: `Ordre de visite : ${visitOrder.join(' → ')}\nBFS garantit le chemin le plus court.`
             }
         }
 
@@ -192,7 +192,7 @@ export function breadthFirstSearch(nodeElement, isUndirected = false) {
 
     steps.push({
         description: `Aucun chemin trouvé`,
-        logs: `Structure: File\nFile vide\nOrdre de visite: [${visitOrder.join(' → ')}]`
+        logs: `Structure : File (FIFO)\nFile vide\nOrdre de visite : [${visitOrder.join(' → ')}]`
     })
 
     return {
@@ -201,7 +201,7 @@ export function breadthFirstSearch(nodeElement, isUndirected = false) {
         structure: 'File',
         visitOrder,
         steps,
-        logs: `Ordre de visite : ${visitOrder.join(' → ')}`
+        logs: `Ordre de visite : ${visitOrder.join(' → ')}\nBFS garantit le chemin le plus court.`
     }
 }
 
@@ -215,7 +215,7 @@ export function depthFirstSearch(nodeElement, isUndirected = false) {
     const steps = [
         {
             description: `Initialisation de DFS`,
-            logs: `Structure: Pile\nPile initiale: [${start}]\nVisité: []`
+            logs: `Structure : Pile (LIFO)\nPile initiale : [${start}]\nVisité : []\nDFS ne garantit pas le chemin le plus court.`
         }
     ]
     const visitOrder = []
@@ -231,7 +231,7 @@ export function depthFirstSearch(nodeElement, isUndirected = false) {
         const stackState = stack.map((p) => p[p.length - 1])
         steps.push({
             description: `Dépile ${current}`,
-            logs: `Structure: Pile\nPile actuelle: [${[current, ...stackState].join(', ')}]\nOrdre de visite: [${visitOrder.join(' → ')}]`
+            logs: `Structure : Pile (LIFO)\nPile actuelle : [${[current, ...stackState].join(', ')}]\nOrdre de visite : [${visitOrder.join(' → ')}]`
         })
 
         if (current === target) {
@@ -247,7 +247,7 @@ export function depthFirstSearch(nodeElement, isUndirected = false) {
                 structure: 'Pile',
                 visitOrder,
                 steps,
-                logs: `Ordre de visite : ${visitOrder.join(' → ')}`
+                logs: `Ordre de visite : ${visitOrder.join(' → ')}\nDFS ne garantit pas le chemin le plus court.`
             }
         }
 
@@ -262,7 +262,7 @@ export function depthFirstSearch(nodeElement, isUndirected = false) {
 
     steps.push({
         description: `Aucun chemin trouvé`,
-        logs: `Structure: Pile\nPile vide\nOrdre de visite: [${visitOrder.join(' → ')}]`
+        logs: `Structure : Pile (LIFO)\nPile vide\nOrdre de visite : [${visitOrder.join(' → ')}]`
     })
 
     return {
@@ -271,7 +271,7 @@ export function depthFirstSearch(nodeElement, isUndirected = false) {
         structure: 'Pile',
         visitOrder,
         steps,
-        logs: `Ordre de visite : ${visitOrder.join(' → ')}`
+        logs: `Ordre de visite : ${visitOrder.join(' → ')}\nDFS ne garantit pas le chemin le plus court.`
     }
 }
 
