@@ -10,7 +10,7 @@ function App() {
     <BrowserRouter>
       <div className="min-h-screen bg-gray-100">
         <header className="bg-white shadow">
-          <div className="max-w-7xl mx-auto flex flex-col gap-4 py-4 px-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="w-full mx-auto flex flex-col gap-4 py-4 px-2 sm:px-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">ADOMC - Algorithmes de graphes</h1>
               <p className="text-sm text-gray-600">Navigation entre les pages de recherche, Cho-Demoucron et arbres couvrants.</p>
@@ -37,7 +37,7 @@ function App() {
           </div>
         </header>
 
-        <main className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+        <main className="w-full mx-auto py-6 px-2 sm:px-3 lg:px-4">
           <Toaster position="top-right" />
           <Routes>
             <Route path="/" element={<HomePage />} />

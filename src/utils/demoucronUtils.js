@@ -145,49 +145,63 @@ export function breadthFirstSearch(nodeElement, isUndirected = false) {
     const target = ids[ids.length - 1]
     const queue = [[start]]
     const visited = new Set([start])
-    const matrix = generateAdjacencyMatrix(nodeElement, true)
-    const steps = []
-    const visitedOrder = []
+    const steps = [
+        {
+            description: `Initialisation de BFS`,
+            logs: `Structure: File\nFile initiale: [${start}]\nVisité: []`
+        }
+    ]
+    const visitOrder = []
 
     while (queue.length > 0) {
-        const path = queue.shift()
-        const current = path[path.length - 1]
-        visitedOrder.push(current)
+        const currentPath = queue.shift()
+        const current = currentPath[currentPath.length - 1]
+        visitOrder.push(current)
+
+        const queueState = queue.map((p) => p[p.length - 1])
+        steps.push({
+            description: `Traitement du nœud ${current}`,
+            logs: `Structure: File\nFile actuelle: [${[current, ...queueState].join(', ')}]\nOrdre de visite: [${visitOrder.join(' → ')}]`
+        })
 
         if (current === target) {
-            const result = {
-                path: pathFromNodeSequence(path),
-                finalMatrix: matrix,
-                steps: [
-                    {
-                        description: `Breadth-First Search de ${start} à ${target}`,
-                        matrix: deepCloneMatrix(matrix),
-                        logs: `Ordre de visite : ${visitedOrder.join(' → ')}`
-                    }
-                ]
+            const pathResult = pathFromNodeSequence(currentPath)
+            steps.push({
+                description: `Cible ${target} atteinte`,
+                logs: `Chemin trouvé : ${currentPath.join(' → ')}\nLongueur : ${currentPath.length - 1} arêtes`
+            })
+
+            return {
+                path: pathResult,
+                finalMatrix: null,
+                structure: 'File',
+                visitOrder,
+                steps,
+                logs: `Ordre de visite : ${visitOrder.join(' → ')}`
             }
-            return result
         }
 
         const neighbors = adjacency[current] || []
         for (const { to } of neighbors) {
             if (!visited.has(to)) {
                 visited.add(to)
-                queue.push([...path, to])
+                queue.push([...currentPath, to])
             }
         }
     }
 
+    steps.push({
+        description: `Aucun chemin trouvé`,
+        logs: `Structure: File\nFile vide\nOrdre de visite: [${visitOrder.join(' → ')}]`
+    })
+
     return {
         path: [],
-        finalMatrix: matrix,
-        steps: [
-            {
-                description: `Breadth-First Search de ${start} à ${target}`,
-                matrix: deepCloneMatrix(matrix),
-                logs: `Aucun chemin trouvé.`
-            }
-        ]
+        finalMatrix: null,
+        structure: 'File',
+        visitOrder,
+        steps,
+        logs: `Ordre de visite : ${visitOrder.join(' → ')}`
     }
 }
 
@@ -198,28 +212,42 @@ export function depthFirstSearch(nodeElement, isUndirected = false) {
     const target = ids[ids.length - 1]
     const stack = [[start]]
     const visited = new Set()
-    const matrix = generateAdjacencyMatrix(nodeElement, true)
-    const visitedOrder = []
+    const steps = [
+        {
+            description: `Initialisation de DFS`,
+            logs: `Structure: Pile\nPile initiale: [${start}]\nVisité: []`
+        }
+    ]
+    const visitOrder = []
 
     while (stack.length > 0) {
-        const path = stack.pop()
-        const current = path[path.length - 1]
+        const currentPath = stack.pop()
+        const current = currentPath[currentPath.length - 1]
 
         if (visited.has(current)) continue
         visited.add(current)
-        visitedOrder.push(current)
+        visitOrder.push(current)
+
+        const stackState = stack.map((p) => p[p.length - 1])
+        steps.push({
+            description: `Dépile ${current}`,
+            logs: `Structure: Pile\nPile actuelle: [${[current, ...stackState].join(', ')}]\nOrdre de visite: [${visitOrder.join(' → ')}]`
+        })
 
         if (current === target) {
+            const pathResult = pathFromNodeSequence(currentPath)
+            steps.push({
+                description: `Cible ${target} atteinte`,
+                logs: `Chemin trouvé : ${currentPath.join(' → ')}\nLongueur : ${currentPath.length - 1} arêtes`
+            })
+
             return {
-                path: pathFromNodeSequence(path),
-                finalMatrix: matrix,
-                steps: [
-                    {
-                        description: `Depth-First Search de ${start} à ${target}`,
-                        matrix: deepCloneMatrix(matrix),
-                        logs: `Ordre de visite : ${visitedOrder.join(' → ')}`
-                    }
-                ]
+                path: pathResult,
+                finalMatrix: null,
+                structure: 'Pile',
+                visitOrder,
+                steps,
+                logs: `Ordre de visite : ${visitOrder.join(' → ')}`
             }
         }
 
@@ -227,21 +255,23 @@ export function depthFirstSearch(nodeElement, isUndirected = false) {
         for (let i = neighbors.length - 1; i >= 0; i--) {
             const { to } = neighbors[i]
             if (!visited.has(to)) {
-                stack.push([...path, to])
+                stack.push([...currentPath, to])
             }
         }
     }
 
+    steps.push({
+        description: `Aucun chemin trouvé`,
+        logs: `Structure: Pile\nPile vide\nOrdre de visite: [${visitOrder.join(' → ')}]`
+    })
+
     return {
         path: [],
-        finalMatrix: matrix,
-        steps: [
-            {
-                description: `Depth-First Search de ${start} à ${target}`,
-                matrix: deepCloneMatrix(matrix),
-                logs: `Aucun chemin trouvé.`
-            }
-        ]
+        finalMatrix: null,
+        structure: 'Pile',
+        visitOrder,
+        steps,
+        logs: `Ordre de visite : ${visitOrder.join(' → ')}`
     }
 }
 

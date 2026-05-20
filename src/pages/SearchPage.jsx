@@ -19,6 +19,8 @@ const SearchPage = () => {
     steps,
     path,
     logs,
+    structure,
+    visitOrder,
     loading,
     error,
     algorithmActif,
@@ -31,7 +33,7 @@ const SearchPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-100 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="w-full mx-auto px-2 sm:px-3 lg:px-4">
         <div className="bg-white shadow sm:rounded-lg p-6 mb-6">
           <h1 className="text-3xl font-bold text-gray-900">Recherche aveugle & optimale</h1>
           <p className="text-gray-600 mt-2">Utilise BFS, DFS, UCS ou A* pour explorer ton graphe et visualiser le chemin trouvé.</p>
@@ -63,7 +65,7 @@ const SearchPage = () => {
                 </button>
               </div>
             </div>
-            <ResultDisplay matrix={matrix} steps={steps} path={path} logs={logs} loading={loading} error={error} modeActif={algorithmActif} />
+            <ResultDisplay matrix={matrix} steps={steps} path={path} logs={logs} structure={structure} visitOrder={visitOrder} loading={loading} error={error} modeActif={algorithmActif} />
           </div>
 
           <div className="space-y-6">

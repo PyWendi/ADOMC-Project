@@ -3,7 +3,8 @@ const algorithmLabels = {
   'demoucron-max': 'Cho-Demoucron Max',
   'BFS': 'Breadth-First Search',
   'DFS': 'Depth-First Search',
-  'UCS': 'Uniform Cost Search'
+  'UCS': 'Uniform Cost Search',
+  'A*': 'A* Search'
 }
 
 const formatCell = (cell) => {
@@ -11,14 +12,14 @@ const formatCell = (cell) => {
   return cell != null ? cell : '∞'
 }
 
-const ResultDisplay = ({ matrix, steps, path, logs, loading, error, modeActif }) => {
+const ResultDisplay = ({ matrix, steps, path, logs, structure, visitOrder, loading, error, modeActif }) => {
   const algorithmLabel = algorithmLabels[modeActif] || modeActif
+  const isTraversal = modeActif === 'BFS' || modeActif === 'DFS'
   return (
     <div className="space-y-4 mt-6 lg:space-y-2">
-      {/* Affichage de la Matrice Finale */}
-      <div className="rounded">
-        <h2 className="text-lg font-semibold mb-4">Matrice Finale {modeActif ? <span className="ml-2 text-xs px-2 py-1 rounded bg-gray-200 text-gray-700 font-bold uppercase">{algorithmLabel}</span> : null}</h2>
-        {/* <div className="border rounded p-4 h-48 overflow-auto"> */}
+      {!isTraversal ? (
+        <div className="rounded">
+          <h2 className="text-lg font-semibold mb-4">Matrice Finale {modeActif ? <span className="ml-2 text-xs px-2 py-1 rounded bg-gray-200 text-gray-700 font-bold uppercase">{algorithmLabel}</span> : null}</h2>
           {matrix ? (
             <table className="min-w-full">
               <tbody>
@@ -36,8 +37,21 @@ const ResultDisplay = ({ matrix, steps, path, logs, loading, error, modeActif })
           ) : (
             <span className="text-gray-500">La matrice finale s'affichera ici</span>
           )}
-        {/* </div> */}
-      </div>
+        </div>
+      ) : (
+        <div className="rounded bg-white p-4">
+          <h2 className="text-lg font-semibold mb-4">Résumé de la recherche {modeActif ? <span className="ml-2 text-xs px-2 py-1 rounded bg-gray-200 text-gray-700 font-bold uppercase">{algorithmLabel}</span> : null}</h2>
+          {visitOrder && visitOrder.length > 0 ? (
+            <div className="space-y-2">
+              <div className="text-sm text-gray-600">Les poids sont ignorés pour BFS et DFS : le parcours se base uniquement sur l'ordre d'exploration.</div>
+              <div><span className="font-semibold">Ordre de visite des nœuds :</span> {visitOrder.join(' → ')}</div>
+              <div><span className="font-semibold">Structure utilisée :</span> {structure || (modeActif === 'BFS' ? 'File' : 'Pile')}</div>
+            </div>
+          ) : (
+            <span className="text-gray-500">Les informations de parcours s'afficheront ici.</span>
+          )}
+        </div>
+      )}
 
       {/* Affichage des Étapes */}
       <div className="rounded pt-4">
@@ -50,7 +64,7 @@ const ResultDisplay = ({ matrix, steps, path, logs, loading, error, modeActif })
               <div key={index} >
                 <div className="font-semibold text-gray-700 mb-1">{step.description || `Étape ${index + 1}`}</div>
                 {step.logs && <div className="text-xs text-gray-500 mb-1 whitespace-pre-wrap">{step.logs}</div>}
-                {step.matrix && (
+                {!isTraversal && step.matrix && (
                   <div className="overflow-auto">
                     <table className="table-auto border-collapse w-full text-center text-xs mb-2">
                       <tbody>
@@ -99,7 +113,7 @@ const ResultDisplay = ({ matrix, steps, path, logs, loading, error, modeActif })
                 }
               }
 
-              return nodes.join(' → '); 
+              return `${nodes.join(' → ')} (${path.length} arête${path.length > 1 ? 's' : ''})`
             })()
           }
         </div>

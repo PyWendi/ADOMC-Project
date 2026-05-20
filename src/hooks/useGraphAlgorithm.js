@@ -12,6 +12,8 @@ export default function useGraphAlgorithm(graphData) {
   const [steps, setSteps] = useState(null)
   const [path, setPath] = useState(null)
   const [logs, setLogs] = useState(null)
+  const [structure, setStructure] = useState(null)
+  const [visitOrder, setVisitOrder] = useState([])
   const [algorithmActif, setAlgorithmActif] = useState('BFS')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
@@ -42,10 +44,12 @@ export default function useGraphAlgorithm(graphData) {
           throw new Error(`Algorithme inconnu : ${algorithm}`)
       }
 
-      setMatrix(result.finalMatrix || generateAdjacencyMatrix(graphData.edges, true, isUndirected))
+      setMatrix(result.finalMatrix ?? null)
       setSteps(result.steps || [])
       setPath(result.path || [])
       setLogs(result.logs || null)
+      setStructure(result.structure || null)
+      setVisitOrder(result.visitOrder || [])
       setAlgorithmActif(algorithm)
     } catch (err) {
       setError(err.message || 'Erreur lors du calcul. Veuillez réessayer.')
@@ -59,6 +63,8 @@ export default function useGraphAlgorithm(graphData) {
     steps,
     path,
     logs,
+    structure,
+    visitOrder,
     loading,
     error,
     algorithmActif,
